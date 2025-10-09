@@ -8,9 +8,9 @@ Opinionated, concise guidance for generating .NET 9 code in this repo. Copilot, 
 
 - Target .NET 9, C# 13. Use file-scoped namespaces, nullable enabled, async-first, DI everywhere, guard clauses.
 - Use standard libraries and first-party Microsoft packages when possible (EF Core, Identity, MediatR, etc).
-- Use minimal APIs or Razor Pages for web apps; ASP.NET Core Web API for APIs; no MVC.
+- Use minimal APIs or Razor Pages for web apps; ASP.NET Core Web API for APIs (no MVC).
 - Use EF Core with code-first migrations for data access; prefer async LINQ; no raw SQL.
-- Use dependency injection (constructor injection) for all services; avoid service locators.
+- All services must implement interfaces; register with DI container as scoped by default.
 - Logging is mandatory via Microsoft.Extensions.Logging with structured templates; never log secrets/PII.
 - Validate inputs (DataAnnotations or FluentValidation). Return RFC 7807 ValidationProblem on bad input.
 - Tests: xUnit + FluentAssertions; integration tests with WebApplicationFactory; Testcontainers for infra.
@@ -77,6 +77,10 @@ Example:
 /// <summary>
 /// Retrieves a single employee by identifier if the caller is authorized.
 /// </summary>
+/// <remarks>
+/// Why: FR-001: Only return the minimal data required by client apps to 
+/// render employee lists and details without exposing sensitive HR fields.
+/// </remarks>
 /// <param name="id">Employee identifier.</param>
 /// <returns>200 with the employee or 404 if not found or not owned by caller.</returns>
 static async Task<Results<Ok<EmployeeDto>, NotFound>> GetEmployee(

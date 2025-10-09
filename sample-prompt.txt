@@ -1,0 +1,4 @@
+Please create a .NET 9 razor pages application with requirements found in the #sample-prd.md file.
+It should use a Sqlite database with the following tables:
+    * Table name: lists. Columns: id, title, description, slug, date_created
+    * Table name: links. Columns: id, title, description, url, list_id
