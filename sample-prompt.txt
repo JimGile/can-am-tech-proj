@@ -1,4 +1,15 @@
-Please create a .NET 9 razor pages application with requirements found in the #sample-prd.md file.
+Please create a .NET 9 razor pages application with requiremen7ts found in the #can-am-tech-prd.md file.
 It should use a Sqlite database with the following tables:
     * Table name: lists. Columns: id, title, description, slug, date_created
     * Table name: links. Columns: id, title, description, url, list_id
+
+
+Please create a .NET 9 razor pages application.
+It should use a Sqlite database with the following tables:
+    * Table name: Book. Columns: book_id, title, author, category_id, is_available, date_created
+    * Table name: Member. Columns: memeber_id, first_name, last_name, email, memebership_date, is_active
+    * Table name: Category. Columns: category_id, name, description
+    * Table name: Loan. Columns: loan_id, book_id, member_id, loan_date, return_date, due_date
+
+It should create DTO's for each of the tables.
+It should create a CRUD REST API controller for each of the tables and appropriate validation and services.

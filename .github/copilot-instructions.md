@@ -8,13 +8,13 @@ Opinionated, concise guidance for generating .NET 9 code in this repo. Copilot, 
 
 - Target .NET 9, C# 13. Use file-scoped namespaces, nullable enabled, async-first, DI everywhere, guard clauses.
 - Use standard libraries and first-party Microsoft packages when possible (EF Core, Identity, MediatR, etc).
-- Use minimal APIs or Razor Pages for web apps; ASP.NET Core Web API for APIs (no MVC).
+- Use minimal APIs or Razor Pages for web apps; ASP.NET Core Web API for APIs.
 - Use EF Core with code-first migrations for data access; prefer async LINQ; no raw SQL.
 - All services must implement interfaces; register with DI container as scoped by default.
 - Logging is mandatory via Microsoft.Extensions.Logging with structured templates; never log secrets/PII.
 - Validate inputs (DataAnnotations or FluentValidation). Return RFC 7807 ValidationProblem on bad input.
-- Tests: xUnit + FluentAssertions; integration tests with WebApplicationFactory; Testcontainers for infra.
-- Comments: use XML documentation on all public classes/members; at class level include Why (business requirement/intent).
+- Tests: unit tests with xUnit + FluentAssertions; integration tests with WebApplicationFactory; Testcontainers for infra.
+- Comments: use XML documentation on all public classes and methods; at class level include Why (business requirement/intent).
 
 ---
 
@@ -34,7 +34,7 @@ Opinionated, concise guidance for generating .NET 9 code in this repo. Copilot, 
 
 - Enforce HTTPS and HSTS (non-dev).
 - Secrets: never commit. Use User Secrets (dev), env vars (containers), and managed secret stores.
-- Limit uploads and request sizes; validate content types; sanitize filenames.
+- Don't trust user input; limit uploads and request sizes; validate content types; sanitize filenames.
 - Persist DataProtection keys for multi-instance deployments.
 
 ---
@@ -58,7 +58,7 @@ Opinionated, concise guidance for generating .NET 9 code in this repo. Copilot, 
 
 ## Testing
 
-- Unit: xUnit + FluentAssertions; mock with NSubstitute/Moq.
+- Unit: xUnit + FluentAssertions; mock with Moq.
 - Integration: WebApplicationFactory<Program> + HttpClient.
 - Infra: Testcontainers for SQLite/Postgres/Redis/etc.
 

@@ -1,0 +1,29 @@
+@page "{id?}"
+@model LibraryApp.Pages.Books.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Create Book" : "Edit Book";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form method="post">
+    <input asp-for="Book.BookId" type="hidden" />
+    <div class="form-group">
+        <label asp-for="Book.Title"></label>
+        <input asp-for="Book.Title" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Book.Author"></label>
+        <input asp-for="Book.Author" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Book.CategoryId"></label>
+        <input asp-for="Book.CategoryId" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label asp-for="Book.IsAvailable"></label>
+        <input asp-for="Book.IsAvailable" type="checkbox" />
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-page="./Index" class="btn btn-secondary">Back to List</a>
+</form>
