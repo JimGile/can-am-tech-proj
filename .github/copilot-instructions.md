@@ -78,7 +78,7 @@ Example:
 /// Retrieves a single employee by identifier if the caller is authorized.
 /// </summary>
 /// <remarks>
-/// Why: FR-001: Only return the minimal data required by client apps to 
+/// Why: Only return the minimal data required by client apps to 
 /// render employee lists and details without exposing sensitive HR fields.
 /// </remarks>
 /// <param name="id">Employee identifier.</param>
