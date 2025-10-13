@@ -6,12 +6,12 @@
 <h2>Member Login</h2>
 <form method="post">
     <div class="mb-3">
-        <label asp-for="Input.MemberId" class="form-label">Member ID</label>
+        <label asp-for="Input.MemberId" class="form-label" for="Input_MemberId">Member ID</label>
         <input asp-for="Input.MemberId" class="form-control" id="Input_MemberId" />
         <span asp-validation-for="Input.MemberId" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="Input.LastName" class="form-label">Last Name</label>
+        <label asp-for="Input.LastName" class="form-label" for="Input_LastName">Last Name</label>
         <input asp-for="Input.LastName" class="form-control" id="Input_LastName" />
         <span asp-validation-for="Input.LastName" class="text-danger"></span>
     </div>
