@@ -12,8 +12,12 @@ public class IndexModel : PageModel
         _logger = logger;
     }
 
+    public int? MemberId { get; private set; }
+    public string? FullName { get; private set; }
+
     public void OnGet()
     {
-
+        MemberId = HttpContext.Session.GetInt32("MemberId");
+        FullName = HttpContext.Session.GetString("FullName");
     }
 }

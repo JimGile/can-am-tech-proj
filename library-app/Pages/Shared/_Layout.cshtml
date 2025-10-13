@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="~/LibraryApp.styles.css" asp-append-version="true" />
 </head>
 <body>
+    @{
+        var fullName = Context.Session.GetString("FullName");
+        var memberId = Context.Session.GetInt32("MemberId");
+    }
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
@@ -29,6 +33,19 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
                         </li>
+                            @* Use existing fullName and memberId variables for navigation toggle *@
+                            @if (!string.IsNullOrEmpty(fullName) && memberId.HasValue)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-page="/Logoff">Logoff</a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-page="/Login">Login</a>
+                                </li>
+                            }
                     </ul>
                 </div>
             </div>
@@ -37,6 +54,10 @@
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
+                @if (!string.IsNullOrEmpty(fullName) && memberId.HasValue)
+                {
+                    <div class="text-end text-success small mb-2">Logged in as: @fullName (ID: @memberId)</div>
+                }
         </main>
     </div>
 

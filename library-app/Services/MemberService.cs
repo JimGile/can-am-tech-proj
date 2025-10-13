@@ -11,14 +11,7 @@ public class MemberService : IMemberService
 
     public async Task<MemberDto> CreateAsync(MemberDto dto)
     {
-        var m = new Member
-        {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Email = dto.Email,
-            MembershipDate = dto.MembershipDate == default ? DateTime.UtcNow : dto.MembershipDate,
-            IsActive = dto.IsActive
-        };
+        var m = new Member(dto);
         _db.Members.Add(m);
         await _db.SaveChangesAsync();
         dto.MemberId = m.MemberId;
@@ -36,40 +29,29 @@ public class MemberService : IMemberService
 
     public async Task<IEnumerable<MemberDto>> GetAllAsync()
     {
-        return await _db.Members.Select(m => new MemberDto
-        {
-            MemberId = m.MemberId,
-            FirstName = m.FirstName,
-            LastName = m.LastName,
-            Email = m.Email,
-            MembershipDate = m.MembershipDate,
-            IsActive = m.IsActive
-        }).ToListAsync();
+        return await _db.Members.Select(m => new MemberDto(m)).ToListAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task<MemberDto?> GetMemberByIdAsync(int memberId)
+    {
+        var m = await _db.Members.FirstOrDefaultAsync(x => x.MemberId == memberId);
+        if (m == null || !m.IsActive) return null;
+        return new MemberDto(m);
     }
 
     public async Task<MemberDto?> GetByIdAsync(int id)
     {
         var m = await _db.Members.FindAsync(id);
         if (m == null) return null;
-        return new MemberDto
-        {
-            MemberId = m.MemberId,
-            FirstName = m.FirstName,
-            LastName = m.LastName,
-            Email = m.Email,
-            MembershipDate = m.MembershipDate,
-            IsActive = m.IsActive
-        };
+        return new MemberDto(m);
     }
 
     public async Task<bool> UpdateAsync(int id, MemberDto dto)
     {
         var m = await _db.Members.FindAsync(id);
         if (m == null) return false;
-        m.FirstName = dto.FirstName;
-        m.LastName = dto.LastName;
-        m.Email = dto.Email;
-        m.IsActive = dto.IsActive;
+        m.UpdateFromDto(dto);
         await _db.SaveChangesAsync();
         return true;
     }

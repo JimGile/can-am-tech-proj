@@ -13,22 +13,57 @@ public class BookService : IBookService
         _db = db;
     }
 
+    /// <summary>
+    /// Retrieves all books.
+    /// </summary>
+    /// <returns>A list of all books.</returns>
+    public async Task<IEnumerable<BookDto>> GetAllAsync()
+    {
+        return await _db.Books.Select(b => new BookDto(b)).ToListAsync();
+    }
+
+    /// <summary>
+    /// Retrieves all available books.
+    /// </summary>
+    /// <returns>A list of all available books.</returns>
+    public async Task<IEnumerable<BookDto>> GetAvailableBooksAsync()
+    {
+        return await _db.Books
+            .Where(b => b.IsAvailable)
+            .Select(b => new BookDto(b)).ToListAsync();
+    }
+
+    /// <summary>
+    /// Retrieves a book by its identifier.
+    /// </summary>
+    /// <param name="id">The book identifier.</param>
+    /// <returns>The book dto if found, otherwise null.</returns>
+    public async Task<BookDto?> GetByIdAsync(int id)
+    {
+        var b = await _db.Books.FindAsync(id);
+        if (b == null) return null;
+        return new BookDto(b);
+    }
+
+    /// <summary>
+    /// Creates a new book from the given dto.
+    /// </summary>
+    /// <param name="dto">The book dto.</param>
+    /// <returns>The created book dto.</returns>
     public async Task<BookDto> CreateAsync(BookDto dto)
     {
-        var book = new Book
-        {
-            Title = dto.Title,
-            Author = dto.Author,
-            CategoryId = dto.CategoryId,
-            IsAvailable = dto.IsAvailable,
-            DateCreated = dto.DateCreated == default ? DateTime.UtcNow : dto.DateCreated
-        };
+        var book = new Book(dto);
         _db.Books.Add(book);
         await _db.SaveChangesAsync();
         dto.BookId = book.BookId;
         return dto;
     }
 
+    /// <summary>
+    /// Deletes a book by its identifier.
+    /// </summary>
+    /// <param name="id">The book identifier.</param>
+    /// <returns>true if the book is found and deleted, otherwise false.</returns>
     public async Task<bool> DeleteAsync(int id)
     {
         var book = await _db.Books.FindAsync(id);
@@ -38,43 +73,26 @@ public class BookService : IBookService
         return true;
     }
 
-    public async Task<IEnumerable<BookDto>> GetAllAsync()
-    {
-        return await _db.Books.Select(b => new BookDto
-        {
-            BookId = b.BookId,
-            Title = b.Title,
-            Author = b.Author,
-            CategoryId = b.CategoryId,
-            IsAvailable = b.IsAvailable,
-            DateCreated = b.DateCreated
-        }).ToListAsync();
-    }
-
-    public async Task<BookDto?> GetByIdAsync(int id)
-    {
-        var b = await _db.Books.FindAsync(id);
-        if (b == null) return null;
-        return new BookDto
-        {
-            BookId = b.BookId,
-            Title = b.Title,
-            Author = b.Author,
-            CategoryId = b.CategoryId,
-            IsAvailable = b.IsAvailable,
-            DateCreated = b.DateCreated
-        };
-    }
-
+    /// <summary>
+    /// Updates a book by its identifier.
+    /// </summary>
+    /// <param name="id">The book identifier.</param>
+    /// <param name="dto">The book dto.</param>
+    /// <returns>true if the book is found and updated, otherwise false.</returns>
     public async Task<bool> UpdateAsync(int id, BookDto dto)
     {
         var book = await _db.Books.FindAsync(id);
-        if (book == null) return false;
-        book.Title = dto.Title;
-        book.Author = dto.Author;
-        book.CategoryId = dto.CategoryId;
-        book.IsAvailable = dto.IsAvailable;
+        // if book is on loan, it cannot be marked as available
+        if (book == null || (await IsBookOnLoanAsync(id) && !dto.IsAvailable)) return false;
+
+        book.UpdateFromDto(dto);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    // private method to check if book is on loan
+    private async Task<bool> IsBookOnLoanAsync(int bookId)
+    {
+        return await _db.Loans.AnyAsync(l => l.BookId == bookId && l.ReturnDate == null);
     }
 }
