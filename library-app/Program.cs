@@ -1,6 +1,8 @@
 global using Microsoft.EntityFrameworkCore;
 using LibraryApp.Data;
 using LibraryApp.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,27 @@ builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
+
+// // Configure authentication + authorization
+// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//     .AddCookie(options =>
+//     {
+//         options.LoginPath = "/Login";        // page to redirect unauthenticated users
+//         options.AccessDeniedPath = "/";
+//         options.Cookie.Name = "LibraryApp.Auth";
+//         options.Cookie.HttpOnly = true;
+//         options.Cookie.SameSite = SameSiteMode.Lax;  // adjust for your frontend needs
+//         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+//         // In production consider sliding expiration, secure cookie, and tighter SameSite
+//     });
+
+// builder.Services.AddAuthorization(options =>
+// {
+//     // Add custom policies if needed
+//     options.FallbackPolicy = new AuthorizationPolicyBuilder()
+//         .RequireAuthenticatedUser()
+//         .Build();
+// });
 
 // Add session support
 builder.Services.AddSession(options =>

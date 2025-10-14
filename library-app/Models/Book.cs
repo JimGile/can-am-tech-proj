@@ -1,15 +1,32 @@
 using LibraryApp.Dtos;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LibraryApp.Models;
 
 public class Book
 {
     public int BookId { get; set; }
+
+    [Required]
+    [StringLength(200)]
     public string Title { get; set; }
+
+    [Required]
+    [StringLength(150)]
     public string Author { get; set; }
+
     public int? CategoryId { get; set; }
+
     public bool IsAvailable { get; set; }
+
+    [Required]
+    [Column(TypeName = "datetime2")]
     public DateTime DateCreated { get; set; }
+
+    // optimistic concurrency token
+    [Timestamp]
+    public byte[]? RowVersion { get; set; }
 
     public Book()
     {
@@ -17,6 +34,8 @@ public class Book
         Author = string.Empty;
         DateCreated = DateTime.UtcNow;
         IsAvailable = true;
+        CategoryId = null;
+        RowVersion = Array.Empty<byte>();
     }
 
     public Book(BookDto dto)
@@ -25,7 +44,8 @@ public class Book
         Author = dto.Author;
         CategoryId = dto.CategoryId;
         IsAvailable = dto.IsAvailable;
-        DateCreated = dto.DateCreated == default ? DateTime.UtcNow : dto.DateCreated;
+        DateCreated = dto.DateCreated;
+        RowVersion = dto.RowVersion;
     }
 
     public void UpdateFromDto(BookDto dto)

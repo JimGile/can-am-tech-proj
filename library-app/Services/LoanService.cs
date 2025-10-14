@@ -12,11 +12,13 @@ public class LoanService : ILoanService
     /// <summary>
     /// Retrieves a list of all loans with pagination and default ordering by LoanDate descending.
     /// </summary>
-    /// <param name="pageSize">The number of items per page.</param>
-    /// <param name="pageNumber">The page number.</param>
+    /// <param name="pageSize">The number of items per page. Defaults to 10.</param>
+    /// <param name="pageNumber">The page number. Defaults to 1.</param>
     /// <returns>A list of all loans.</returns>
     public async Task<IEnumerable<LoanDto>> GetAllAsync(int pageSize, int pageNumber)
     {
+        if (pageSize < 1) pageSize = 10;
+        if (pageNumber < 1) pageNumber = 1;
         return await _db.Loans
             .OrderByDescending(l => l.LoanDate)
             .Skip(pageSize * (pageNumber - 1))

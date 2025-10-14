@@ -13,24 +13,31 @@ public class BookService : IBookService
         _db = db;
     }
 
-    /// <summary>
-    /// Retrieves all books.
-    /// </summary>
-    /// <returns>A list of all books.</returns>
-    public async Task<IEnumerable<BookDto>> GetAllAsync()
+    public async Task<PagedResult<BookDto>> GetPagedAsync(PagedRequest request, CancellationToken ct = default)
     {
-        return await _db.Books.Select(b => new BookDto(b)).ToListAsync();
-    }
+        var query = _db.Books.AsNoTracking();
 
-    /// <summary>
-    /// Retrieves all available books.
-    /// </summary>
-    /// <returns>A list of all available books.</returns>
-    public async Task<IEnumerable<BookDto>> GetAvailableBooksAsync()
-    {
-        return await _db.Books
-            .Where(b => b.IsAvailable)
-            .Select(b => new BookDto(b)).ToListAsync();
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var s = request.Search.Trim();
+            query = query.Where(b => b.Title.Contains(s) || b.Author.Contains(s));
+        }
+
+        bool desc = string.Equals(request.SortDir, "desc", StringComparison.OrdinalIgnoreCase);
+        query = request.SortBy?.ToLowerInvariant() switch
+        {
+            "author" => desc ? query.OrderByDescending(b => b.Author) : query.OrderBy(b => b.Author),
+            _ => desc ? query.OrderByDescending(b => b.Title) : query.OrderBy(b => b.Title),
+        };
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(b => new BookDto(b))
+            .ToListAsync(ct);
+
+        return new PagedResult<BookDto>(items.AsReadOnly(), total, request);
     }
 
     /// <summary>
@@ -38,10 +45,9 @@ public class BookService : IBookService
     /// </summary>
     /// <param name="id">The book identifier.</param>
     /// <returns>The book dto if found, otherwise null.</returns>
-    public async Task<BookDto?> GetByIdAsync(int id)
+    public async Task<BookDto> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var b = await _db.Books.FindAsync(id);
-        if (b == null) return null;
+        var b = await _db.Books.FindAsync(id, ct) ?? throw new KeyNotFoundException($"Book {id} not found.");
         return new BookDto(b);
     }
 
@@ -50,11 +56,11 @@ public class BookService : IBookService
     /// </summary>
     /// <param name="dto">The book dto.</param>
     /// <returns>The created book dto.</returns>
-    public async Task<BookDto> CreateAsync(BookDto dto)
+    public async Task<BookDto> CreateAsync(BookDto dto, CancellationToken ct = default)
     {
         var book = new Book(dto);
         _db.Books.Add(book);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         dto.BookId = book.BookId;
         return dto;
     }
@@ -64,13 +70,11 @@ public class BookService : IBookService
     /// </summary>
     /// <param name="id">The book identifier.</param>
     /// <returns>true if the book is found and deleted, otherwise false.</returns>
-    public async Task<bool> DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
-        var book = await _db.Books.FindAsync(id);
-        if (book == null) return false;
+        var book = await _db.Books.FindAsync(id, ct) ?? throw new KeyNotFoundException($"Book {id} not found.");
         _db.Books.Remove(book);
-        await _db.SaveChangesAsync();
-        return true;
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>
@@ -79,20 +83,23 @@ public class BookService : IBookService
     /// <param name="id">The book identifier.</param>
     /// <param name="dto">The book dto.</param>
     /// <returns>true if the book is found and updated, otherwise false.</returns>
-    public async Task<bool> UpdateAsync(int id, BookDto dto)
+    public async Task UpdateAsync(BookDto dto, CancellationToken ct = default)
     {
-        var book = await _db.Books.FindAsync(id);
+        var book = await _db.Books.FindAsync(dto.BookId, ct) ?? throw new KeyNotFoundException($"Book {dto.BookId} not found.");
+
         // if book is on loan, it cannot be marked as available
-        if (book == null || (await IsBookOnLoanAsync(id) && !dto.IsAvailable)) return false;
+        if (await IsBookOnLoanAsync(dto.BookId, ct) && !dto.IsAvailable) throw new InvalidOperationException("Cannot mark a book as unavailable while it is on loan.");
 
         book.UpdateFromDto(dto);
-        await _db.SaveChangesAsync();
-        return true;
+        // // Set original RowVersion for concurrency check
+        // _db.Entry(book).Property(e => e.RowVersion).OriginalValue = dto.RowVersion;
+
+        await _db.SaveChangesAsync(ct);
     }
 
     // private method to check if book is on loan
-    private async Task<bool> IsBookOnLoanAsync(int bookId)
+    private async Task<bool> IsBookOnLoanAsync(int bookId, CancellationToken ct = default)
     {
-        return await _db.Loans.AnyAsync(l => l.BookId == bookId && l.ReturnDate == null);
+        return await _db.Loans.AnyAsync(l => l.BookId == bookId && l.ReturnDate == null, ct);
     }
 }

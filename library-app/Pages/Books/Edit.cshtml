@@ -7,10 +7,12 @@
 <h1>@ViewData["Title"]</h1>
 
 <form method="post">
-    <input asp-for="Book.BookId" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Book.BookId" />
+    <input type="hidden" asp-for="Book.RowVersion" />
     <div class="form-group">
         <label asp-for="Book.Title"></label>
-        <input asp-for="Book.Title" class="form-control" />
+        <input asp-for="Book.Title" class="form-control" id="Book_Title" />
     </div>
     <div class="form-group">
         <label asp-for="Book.Author"></label>
