@@ -1,5 +1,6 @@
 using LibraryApp.Dtos;
 using LibraryApp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -15,7 +16,7 @@ public class EditModel : PageModel
 
     public bool IsNew => Book.BookId == 0;
 
-    public async Task<IActionResult> OnGetAsync(int? id)
+    public async Task<IActionResult> OnGetAsync(int? id, CancellationToken ct)
     {
         if (id == null) return Page();
         var dto = await _bookService.GetByIdAsync(id.Value);
@@ -24,7 +25,7 @@ public class EditModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(Book.Title))
         {
@@ -35,13 +36,30 @@ public class EditModel : PageModel
 
         if (Book.BookId == 0)
         {
-            await _bookService.CreateAsync(Book);
+            await _bookService.CreateAsync(Book, ct);
         }
         else
         {
-            await _bookService.UpdateAsync(Book.BookId, Book);
+            try
+            {
+                await _bookService.UpdateAsync(Book, ct);
+                return RedirectToPage("./Index");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                var current = await _bookService.GetByIdAsync(Book.BookId, ct);
+                if (current == null)
+                {
+                    ModelState.AddModelError(string.Empty, "The record you attempted to edit was deleted by another user.");
+                    return Page();
+                }
+
+                ModelState.AddModelError(string.Empty, "The record you attempted to edit was modified by another user. The current values are shown — reapply your changes and save again.");
+                Book = current;
+                return Page();
+            }
         }
 
-        return RedirectToPage("Index");
+        return RedirectToPage("./Index");
     }
 }

@@ -2,6 +2,18 @@
 @model LibraryApp.Pages.Books.IndexModel
 @{
     ViewData["Title"] = "Books";
+
+    var totalPages = Model.Books?.TotalPages ?? 1;
+    var currentPage = Model.Books?.PageNumber ?? 1;
+
+    string ToggleSort(string column)
+    {
+        if (string.Equals(Model.Books?.SortBy, column, StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Equals(Model.Books?.SortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+        }
+        return "asc";
+    }
 }
 
 <h1>Books</h1>
@@ -11,12 +23,62 @@
     <a asp-page="/Index" class="btn btn-secondary">Home</a>
 </p>
 
+<div class="mb-3">
+    <form method="get" class="d-flex" role="search">
+        <input
+            name="Search"
+            value="@(Model.Books?.Search ?? string.Empty)"
+            class="form-control me-2"
+            placeholder="Search title or author" />
+
+        <input type="hidden" name="SortBy" value="@(Model.Books?.SortBy ?? "Title")" />
+        <input type="hidden" name="SortDir" value="@(Model.Books?.SortDir ?? "asc")" />
+        <input type="hidden" name="PageSize" value="@(Model.Books?.PageSize ?? 20)" />
+        <input type="hidden" name="PageNumber" value="1" />
+
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+
+        <a class="btn btn-outline-secondary ms-2"
+           asp-page="./Index"
+           asp-route-Search=""
+           asp-route-SortBy="@(Model.Books?.SortBy ?? "Title")"
+           asp-route-SortDir="@(Model.Books?.SortDir ?? "asc")"
+           asp-route-PageSize="@(Model.Books?.PageSize ?? 20)"
+           asp-route-PageNumber="1">Reset</a>
+    </form>
+</div>
+
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>#</th>
-            <th>Title</th>
-            <th>Author</th>
+            <th>
+                <a asp-page="./Index"
+                   asp-route-Search="@(Model.Books?.Search ?? "")"
+                   asp-route-SortBy="Title"
+                   asp-route-SortDir="@ToggleSort("Title")"
+                   asp-route-PageNumber="1"
+                   asp-route-PageSize="@(Model.Books?.PageSize ?? 20)">
+                    Title
+                    @if (string.Equals(Model.Books?.SortBy, "Title", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="ms-1">@((Model.Books?.SortDir == "asc") ? "▲" : "▼")</span>
+                    }
+                </a>
+            </th>
+            <th>
+                <a asp-page="./Index"
+                   asp-route-Search="@(Model.Books?.Search ?? "")"
+                   asp-route-SortBy="Author"
+                   asp-route-SortDir="@ToggleSort("Author")"
+                   asp-route-PageNumber="1"
+                   asp-route-PageSize="@(Model.Books?.PageSize ?? 20)">
+                    Author
+                    @if (string.Equals(Model.Books?.SortBy, "Author", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="ms-1">@((Model.Books?.SortDir == "asc") ? "▲" : "▼")</span>
+                    }
+                </a>
+            </th>
             <th>Category</th>
             <th>Available</th>
             <th>Created</th>
@@ -24,23 +86,85 @@
         </tr>
     </thead>
     <tbody>
-@foreach (var b in Model.Books)
-{
-    <tr>
-        <td>@b.BookId</td>
-        <td>@b.Title</td>
-        <td>@b.Author</td>
-        <td>@(b.CategoryId?.ToString() ?? "-")</td>
-        <td>@(b.IsAvailable ? "Yes" : "No")</td>
-        <td>@b.DateCreated.ToLocalTime().ToString("g")</td>
-        <td>
-            <a asp-page="./Edit" asp-route-id="@b.BookId">Edit</a>
-            |
-            <form method="post" asp-page-handler="Delete" asp-route-id="@b.BookId" style="display:inline" onsubmit="return confirm('Delete this book?');">
-                <button type="submit" class="btn btn-link">Delete</button>
-            </form>
-        </td>
-    </tr>
-}
+        @if (Model.Books?.Items == null || !Model.Books.Items.Any())
+        {
+            <tr>
+                <td colspan="6" class="text-muted">No books found.</td>
+            </tr>
+        }
+        else
+        {
+            foreach (var book in Model.Books.Items)
+            {
+                <tr>
+                    <td>@book.Title</td>
+                    <td>@book.Author</td>
+                    <td>@(book.CategoryId?.ToString() ?? "-")</td>
+                    <td>@(book.IsAvailable ? "Yes" : "No")</td>
+                    <td>@book.DateCreated.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <a asp-page="./Edit" asp-route-id="@book.BookId" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <a asp-page="./Details" asp-route-id="@book.BookId" class="btn btn-sm btn-outline-secondary ms-1">Details</a>
+                        <form method="post" asp-page-handler="Delete" asp-route-id="@book.BookId" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Delete this book?');">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        }
     </tbody>
 </table>
+
+@if (totalPages > 1)
+{
+    <nav aria-label="Books pagination">
+        <ul class="pagination">
+            <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                <a class="page-link"
+                   asp-page="./Index"
+                   asp-route-Search="@(Model.Books?.Search ?? "")"
+                   asp-route-SortBy="@(Model.Books?.SortBy ?? "Title")"
+                   asp-route-SortDir="@(Model.Books?.SortDir ?? "asc")"
+                   asp-route-PageNumber="@(Math.Max(1, currentPage - 1))"
+                   asp-route-PageSize="@(Model.Books?.PageSize ?? 20)">Previous</a>
+            </li>
+
+            @for (int p = 1; p <= totalPages; p++)
+            {
+                var show = p == 1 || p == totalPages || (p >= currentPage - 2 && p <= currentPage + 2);
+                if (!show)
+                {
+                    if (p == 2 && currentPage > 4)
+                    {
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    }
+                    continue;
+                }
+
+                <li class="page-item @(p == currentPage ? "active" : "")">
+                    <a class="page-link"
+                       asp-page="./Index"
+                       asp-route-Search="@(Model.Books?.Search ?? "")"
+                       asp-route-SortBy="@(Model.Books?.SortBy ?? "Title")"
+                       asp-route-SortDir="@(Model.Books?.SortDir ?? "asc")"
+                       asp-route-PageNumber="@p"
+                       asp-route-PageSize="@(Model.Books?.PageSize ?? 20)">@p</a>
+                </li>
+            }
+
+            <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                <a class="page-link"
+                   asp-page="./Index"
+                   asp-route-Search="@(Model.Books?.Search ?? "")"
+                   asp-route-SortBy="@(Model.Books?.SortBy ?? "Title")"
+                   asp-route-SortDir="@(Model.Books?.SortDir ?? "asc")"
+                   asp-route-PageNumber="@(Math.Min(totalPages, currentPage + 1))"
+                   asp-route-PageSize="@(Model.Books?.PageSize ?? 20)">Next</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="text-muted mt-2">
+        Showing page @currentPage of @totalPages — @(Model.Books?.Total ?? 0) record(s) total.
+    </div>
+}

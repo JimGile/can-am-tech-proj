@@ -12,7 +12,11 @@ public class LoansController : ControllerBase
     public LoansController(ILoanService svc) => _svc = svc;
 
     [HttpGet]
-    public async Task<IActionResult> Get() => Ok(await _svc.GetAllAsync());
+    public async Task<IActionResult> Get([FromQuery]PagedRequest request)
+    {
+        var result = await _svc.GetAllAsync(request.PageNumber, request.PageSize);
+        return Ok(result);
+    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> Get(int id)

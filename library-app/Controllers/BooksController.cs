@@ -12,7 +12,11 @@ public class BooksController : ControllerBase
     public BooksController(IBookService svc) => _svc = svc;
 
     [HttpGet]
-    public async Task<IActionResult> Get() => Ok(await _svc.GetAllAsync());
+    public async Task<IActionResult> Get([FromQuery]PagedRequest request)
+    {
+        var result = await _svc.GetPagedAsync(request);
+        return Ok(result);
+    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> Get(int id)
@@ -29,17 +33,17 @@ public class BooksController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = created.BookId }, created);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Put(int id, [FromBody] BookDto dto)
+    [HttpPut]
+    public async Task<IActionResult> Put([FromBody] BookDto dto)
     {
-        var ok = await _svc.UpdateAsync(id, dto);
-        return ok ? NoContent() : NotFound();
+        await _svc.UpdateAsync(dto);
+        return Ok(dto);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var ok = await _svc.DeleteAsync(id);
-        return ok ? NoContent() : NotFound();
+        await _svc.DeleteAsync(id);
+        return Ok(id);
     }
 }
