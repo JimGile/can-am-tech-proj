@@ -9,7 +9,7 @@ public class CategoryService : ICategoryService
     private readonly LibraryContext _db;
     public CategoryService(LibraryContext db) => _db = db;
 
-    public async Task<CategoryDto> CreateAsync(CategoryDto dto)
+    public async Task<CategoryDto> CreateAsync(CategoryDto dto, CancellationToken ct = default)
     {
         var c = new Category { Name = dto.Name, Description = dto.Description };
         _db.Categories.Add(c);
@@ -18,7 +18,7 @@ public class CategoryService : ICategoryService
         return dto;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
         var c = await _db.Categories.FindAsync(id);
         if (c == null) return false;
@@ -27,19 +27,19 @@ public class CategoryService : ICategoryService
         return true;
     }
 
-    public async Task<IEnumerable<CategoryDto>> GetAllAsync()
+    public async Task<IEnumerable<CategoryDto>> GetAllAsync(CancellationToken ct = default)
     {
         return await _db.Categories.Select(c => new CategoryDto { CategoryId = c.CategoryId, Name = c.Name, Description = c.Description }).ToListAsync();
     }
 
-    public async Task<CategoryDto?> GetByIdAsync(int id)
+    public async Task<CategoryDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         var c = await _db.Categories.FindAsync(id);
         if (c == null) return null;
         return new CategoryDto { CategoryId = c.CategoryId, Name = c.Name, Description = c.Description };
     }
 
-    public async Task<bool> UpdateAsync(int id, CategoryDto dto)
+    public async Task<bool> UpdateAsync(int id, CategoryDto dto, CancellationToken ct = default)
     {
         var c = await _db.Categories.FindAsync(id);
         if (c == null) return false;

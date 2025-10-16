@@ -13,19 +13,24 @@
     <div class="form-group">
         <label asp-for="Book.Title"></label>
         <input asp-for="Book.Title" class="form-control" id="Book_Title" />
+        <span asp-validation-for="Book.Title" class="text-danger"></span> @* Add validation span *@
     </div>
     <div class="form-group">
         <label asp-for="Book.Author"></label>
         <input asp-for="Book.Author" class="form-control" />
+        <span asp-validation-for="Book.Author" class="text-danger"></span> @* Add validation span *@
     </div>
     <div class="form-group">
         <label asp-for="Book.CategoryId"></label>
-        <input asp-for="Book.CategoryId" class="form-control" />
+        <select asp-for="Book.CategoryId" asp-items="Model.Categories" class="form-control">
+            <option value="">-- Select Category --</option> @* Optional: Add a default empty option *@
+        </select>
+        <span asp-validation-for="Book.CategoryId" class="text-danger"></span> @* Add validation span *@
+    </div>    
+    <div class="form-group form-check mt-2"> @* Added mt-2 for spacing *@
+        <input asp-for="Book.IsAvailable" type="checkbox" class="form-check-input" /> @* Added form-check-input *@
+        <label asp-for="Book.IsAvailable" class="form-check-label"></label> @* Added form-check-label *@
     </div>
-    <div class="form-group">
-        <label asp-for="Book.IsAvailable"></label>
-        <input asp-for="Book.IsAvailable" type="checkbox" />
-    </div>
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a asp-page="./Index" class="btn btn-secondary">Back to List</a>
+    <button type="submit" class="btn btn-primary mt-3">Save</button> @* Added mt-3 for spacing *@
+    <a asp-page="./Index" class="btn btn-secondary mt-3">Back to List</a> @* Added mt-3 for spacing *@
 </form>

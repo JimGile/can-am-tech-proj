@@ -104,7 +104,6 @@
                     <td>@book.DateCreated.ToLocalTime().ToString("g")</td>
                     <td>
                         <a asp-page="./Edit" asp-route-id="@book.BookId" class="btn btn-sm btn-outline-primary">Edit</a>
-                        <a asp-page="./Details" asp-route-id="@book.BookId" class="btn btn-sm btn-outline-secondary ms-1">Details</a>
                         <form method="post" asp-page-handler="Delete" asp-route-id="@book.BookId" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger ms-1" onclick="return confirm('Delete this book?');">Delete</button>
                         </form>

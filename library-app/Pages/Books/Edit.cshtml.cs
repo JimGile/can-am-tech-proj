@@ -3,36 +3,54 @@ using LibraryApp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering; // Ensure this is present
+using Microsoft.EntityFrameworkCore; // For DbUpdateConcurrencyException
 
 namespace LibraryApp.Pages.Books;
 
 public class EditModel : PageModel
 {
     private readonly IBookService _bookService;
-    public EditModel(IBookService bookService) => _bookService = bookService;
+    private readonly ICategoryService _categoryService;
 
-    [BindProperty]
-    public BookDto Book { get; set; } = new BookDto();
+    public EditModel(IBookService bookService, ICategoryService categoryService)
+    {
+        _bookService = bookService ?? throw new ArgumentNullException(nameof(bookService));
+        _categoryService = categoryService ?? throw new ArgumentNullException(nameof(categoryService));
+        Book = new BookDto();
+        Categories = new SelectList(Enumerable.Empty<CategoryDto>(), nameof(CategoryDto.CategoryId), nameof(CategoryDto.Name));
+    }
 
-    public bool IsNew => Book.BookId == 0;
+    [BindProperty(SupportsGet = true)]
+    public BookDto Book { get; set; } // Change to public set for direct assignment
+
+    public SelectList Categories { get; set; } // Change to public set for direct assignment
+
+    public bool IsNew => Book?.BookId == 0; // Null-check Book
 
     public async Task<IActionResult> OnGetAsync(int? id, CancellationToken ct)
     {
-        if (id == null) return Page();
-        var dto = await _bookService.GetByIdAsync(id.Value);
-        if (dto == null) return NotFound();
-        Book = dto;
+        if (!id.HasValue || id.Value == 0)
+        {
+            Book = new BookDto(); // Initialize for new book creation
+        }
+        else
+        {
+            Book = await _bookService.GetByIdAsync(id.Value, ct);
+            if (Book == null) return NotFound();
+        }
+        await LoadCategoriesAsync(ct); // Load categories for dropdown
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(Book.Title))
+        // Re-load categories if ModelState is invalid, so dropdown is populated on re-display
+        if (!ModelState.IsValid)
         {
-            ModelState.AddModelError(nameof(Book.Title), "Title is required");
+            await LoadCategoriesAsync(ct);
+            return Page();
         }
-
-        if (!ModelState.IsValid) return Page();
 
         if (Book.BookId == 0)
         {
@@ -40,26 +58,22 @@ public class EditModel : PageModel
         }
         else
         {
-            try
-            {
-                await _bookService.UpdateAsync(Book, ct);
-                return RedirectToPage("./Index");
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                var current = await _bookService.GetByIdAsync(Book.BookId, ct);
-                if (current == null)
-                {
-                    ModelState.AddModelError(string.Empty, "The record you attempted to edit was deleted by another user.");
-                    return Page();
-                }
-
-                ModelState.AddModelError(string.Empty, "The record you attempted to edit was modified by another user. The current values are shown — reapply your changes and save again.");
-                Book = current;
-                return Page();
-            }
+            await _bookService.UpdateAsync(Book, ct);
         }
-
         return RedirectToPage("./Index");
     }
+
+    public async Task<IActionResult> OnPostDeleteAsync(int id, CancellationToken ct)
+    {
+        await _bookService.DeleteAsync(id, ct);
+        return RedirectToPage("./Index");
+    }
+
+    // Helper to load categories, to avoid code duplication
+    private async Task LoadCategoriesAsync(CancellationToken ct)
+    {
+        var categoryDtos = await _categoryService.GetAllAsync(ct);
+        Categories = new SelectList(categoryDtos, nameof(CategoryDto.CategoryId), nameof(CategoryDto.Name), Book?.CategoryId);
+    }
+
 }

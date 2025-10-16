@@ -4,9 +4,9 @@ namespace LibraryApp.Services;
 
 public interface ICategoryService
 {
-    Task<IEnumerable<CategoryDto>> GetAllAsync();
-    Task<CategoryDto?> GetByIdAsync(int id);
-    Task<CategoryDto> CreateAsync(CategoryDto dto);
-    Task<bool> UpdateAsync(int id, CategoryDto dto);
-    Task<bool> DeleteAsync(int id);
+    Task<IEnumerable<CategoryDto>> GetAllAsync(CancellationToken ct = default);
+    Task<CategoryDto?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<CategoryDto> CreateAsync(CategoryDto dto, CancellationToken ct = default);
+    Task<bool> UpdateAsync(int id, CategoryDto dto, CancellationToken ct = default);
+    Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 }
