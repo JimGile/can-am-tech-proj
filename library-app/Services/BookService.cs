@@ -1,6 +1,7 @@
 using LibraryApp.Data;
 using LibraryApp.Dtos;
 using LibraryApp.Models;
+using Microsoft.EntityFrameworkCore; // Add this using statement
 
 namespace LibraryApp.Services;
 
@@ -15,7 +16,9 @@ public class BookService : IBookService
 
     public async Task<PagedResult<BookDto>> GetPagedAsync(PagedRequest request, CancellationToken ct = default)
     {
-        var query = _db.Books.AsNoTracking();
+        var query = _db.Books
+            .Include(b => b.Category) // Eagerly load the Category
+            .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
@@ -34,7 +37,17 @@ public class BookService : IBookService
         var items = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(b => new BookDto(b))
+            .Select(b => new BookDto // Update the projection to include CategoryName
+            {
+                BookId = b.BookId,
+                Title = b.Title,
+                Author = b.Author,
+                CategoryId = b.CategoryId,
+                CategoryName = b.Category!.Name, // Populate CategoryName
+                IsAvailable = b.IsAvailable,
+                DateCreated = b.DateCreated,
+                RowVersion = b.RowVersion
+            })
             .ToListAsync(ct);
 
         return new PagedResult<BookDto>(items.AsReadOnly(), total, request);
@@ -47,7 +60,10 @@ public class BookService : IBookService
     /// <returns>The book dto if found, otherwise null.</returns>
     public async Task<BookDto> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var b = await _db.Books.FindAsync(id, ct) ?? throw new KeyNotFoundException($"Book {id} not found.");
+        var b = await _db.Books
+            .Include(b => b.Category) // Eagerly load the Category
+            .FirstOrDefaultAsync(b => b.BookId == id, ct)
+            ?? throw new KeyNotFoundException($"Book {id} not found.");
         return new BookDto(b);
     }
 
@@ -80,7 +96,6 @@ public class BookService : IBookService
     /// <summary>
     /// Updates a book by its identifier.
     /// </summary>
-    /// <param name="id">The book identifier.</param>
     /// <param name="dto">The book dto.</param>
     /// <returns>true if the book is found and updated, otherwise false.</returns>
     public async Task UpdateAsync(BookDto dto, CancellationToken ct = default)

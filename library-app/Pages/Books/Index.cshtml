@@ -99,7 +99,7 @@
                 <tr>
                     <td>@book.Title</td>
                     <td>@book.Author</td>
-                    <td>@(book.CategoryId?.ToString() ?? "-")</td>
+                    <td>@(book.CategoryName ?? "-")</td> @* Changed from CategoryId to CategoryName *@
                     <td>@(book.IsAvailable ? "Yes" : "No")</td>
                     <td>@book.DateCreated.ToLocalTime().ToString("g")</td>
                     <td>

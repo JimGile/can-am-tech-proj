@@ -16,7 +16,11 @@ public class Book
     [StringLength(150)]
     public string Author { get; set; }
 
+    // This is your explicit foreign key property
     public int? CategoryId { get; set; }
+
+    // This is the display property.
+    public Category? Category { get; set; }
 
     public bool IsAvailable { get; set; }
 
