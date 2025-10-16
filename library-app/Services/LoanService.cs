@@ -61,45 +61,6 @@ public class LoanService : ILoanService
     }
 
     /// <summary>
-    /// Retrieves all active loans (i.e. loans with a null return date),
-    /// ordered by due date ascending.
-    /// </summary>
-    /// <param name="pageSize">The number of items per page.</param>
-    /// <param name="pageNumber">The page number.</param>
-    /// <returns>A list of all active loans for the given page, ordered by due date ascending.</returns>
-    public async Task<IEnumerable<LoanDto>> GetActiveLoansAsync(int pageSize, int pageNumber)
-    {
-        return await _db.Loans
-            .Where(l => l.ReturnDate == null)
-            .OrderBy(l => l.DueDate)
-            .Skip(pageSize * (pageNumber - 1))
-            .Take(pageSize)
-            .Select(l => new LoanDto(l)).ToListAsync();
-    }
-
-    // get active loans by member id
-    public async Task<IEnumerable<LoanDto>> GetActiveLoansByMemberIdAsync(int memberId, int pageSize, int pageNumber)
-    {
-        return await _db.Loans
-            .Where(l => l.MemberId == memberId && l.ReturnDate == null)
-            .OrderBy(l => l.DueDate)
-            .Skip(pageSize * (pageNumber - 1))
-            .Take(pageSize)
-            .Select(l => new LoanDto(l)).ToListAsync();
-    }
-
-    // get active loan by book id
-    public async Task<LoanDto?> GetActiveLoanByBookIdAsync(int bookId)
-    {
-        var l = await _db.Loans
-            .Where(l => l.BookId == bookId && l.ReturnDate == null)
-            .OrderBy(l => l.DueDate)
-            .FirstOrDefaultAsync();
-        if (l == null) return null;
-        return new LoanDto(l);
-    }
-
-    /// <summary>
     /// Retrieves a specific loan by its identifier.
     /// </summary>
     /// <param name="id">The loan identifier.</param>

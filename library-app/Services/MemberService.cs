@@ -9,6 +9,18 @@ public class MemberService : IMemberService
     private readonly LibraryContext _db;
     public MemberService(LibraryContext db) => _db = db;
 
+    public async Task<IEnumerable<MemberDto>> GetAllAsync()
+    {
+        return await _db.Members.Select(m => new MemberDto(m)).ToListAsync();
+    }
+
+    public async Task<MemberDto?> GetByIdAsync(int id)
+    {
+        var m = await _db.Members.FindAsync(id);
+        if (m == null) return null;
+        return new MemberDto(m);
+    }
+
     public async Task<MemberDto> CreateAsync(MemberDto dto)
     {
         var m = new Member(dto);
@@ -16,6 +28,15 @@ public class MemberService : IMemberService
         await _db.SaveChangesAsync();
         dto.MemberId = m.MemberId;
         return dto;
+    }
+
+    public async Task<bool> UpdateAsync(int id, MemberDto dto)
+    {
+        var m = await _db.Members.FindAsync(id);
+        if (m == null) return false;
+        m.UpdateFromDto(dto);
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -27,32 +48,4 @@ public class MemberService : IMemberService
         return true;
     }
 
-    public async Task<IEnumerable<MemberDto>> GetAllAsync()
-    {
-        return await _db.Members.Select(m => new MemberDto(m)).ToListAsync();
-    }
-
-    /// <inheritdoc />
-    public async Task<MemberDto?> GetMemberByIdAsync(int memberId)
-    {
-        var m = await _db.Members.FirstOrDefaultAsync(x => x.MemberId == memberId);
-        if (m == null || !m.IsActive) return null;
-        return new MemberDto(m);
-    }
-
-    public async Task<MemberDto?> GetByIdAsync(int id)
-    {
-        var m = await _db.Members.FindAsync(id);
-        if (m == null) return null;
-        return new MemberDto(m);
-    }
-
-    public async Task<bool> UpdateAsync(int id, MemberDto dto)
-    {
-        var m = await _db.Members.FindAsync(id);
-        if (m == null) return false;
-        m.UpdateFromDto(dto);
-        await _db.SaveChangesAsync();
-        return true;
-    }
 }

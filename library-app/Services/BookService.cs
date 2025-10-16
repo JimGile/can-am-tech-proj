@@ -14,10 +14,61 @@ public class BookService : IBookService
         _db = db;
     }
 
+    /// <summary>
+    /// Retrieves a paged list of books.
+    /// </summary>
+    /// <param name="request">The paged request.</param>
+    /// <returns>A paged result containing the list of books and the total count.</returns>
     public async Task<PagedResult<BookDto>> GetPagedAsync(PagedRequest request, CancellationToken ct = default)
     {
         var query = _db.Books
             .Include(b => b.Category) // Eagerly load the Category
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var s = request.Search.Trim();
+            query = query.Where(b => b.Title.Contains(s) || b.Author.Contains(s));
+        }
+
+        bool desc = string.Equals(request.SortDir, "desc", StringComparison.OrdinalIgnoreCase);
+        query = request.SortBy?.ToLowerInvariant() switch
+        {
+            "author" => desc ? query.OrderByDescending(b => b.Author) : query.OrderBy(b => b.Author),
+            _ => desc ? query.OrderByDescending(b => b.Title) : query.OrderBy(b => b.Title),
+        };
+
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(b => new BookDto // Update the projection to include CategoryName
+            {
+                BookId = b.BookId,
+                Title = b.Title,
+                Author = b.Author,
+                CategoryId = b.CategoryId,
+                CategoryName = b.Category!.Name, // Populate CategoryName
+                IsAvailable = b.IsAvailable,
+                DateCreated = b.DateCreated,
+                RowVersion = b.RowVersion
+            })
+            .ToListAsync(ct);
+
+        return new PagedResult<BookDto>(items.AsReadOnly(), total, request);
+    }
+
+    /// <summary>
+    /// Retrieves a paged list of books by category id.
+    /// </summary>
+    /// <param name="categoryId">The category identifier.</param>
+    /// <param name="request">The paged request.</param>
+    /// <returns>A paged result containing the list of books and the total count.</returns>
+    public async Task<PagedResult<BookDto>> GetPagedByCategoryIdAsync(int categoryId, PagedRequest request, CancellationToken ct = default)
+    {
+        var query = _db.Books
+            .Include(b => b.Category) // Eagerly load the Category
+            .Where(b => b.CategoryId == categoryId)
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -100,7 +151,7 @@ public class BookService : IBookService
     /// <returns>true if the book is found and updated, otherwise false.</returns>
     public async Task UpdateAsync(BookDto dto, CancellationToken ct = default)
     {
-        var book = await _db.Books.FindAsync(dto.BookId, ct) ?? throw new KeyNotFoundException($"Book {dto.BookId} not found.");
+        var book = await _db.Books.FirstOrDefaultAsync(b => b.BookId == dto.BookId, ct) ?? throw new KeyNotFoundException($"Book {dto.BookId} not found.");
 
         // if book is on loan, it cannot be marked as available
         if (await IsBookOnLoanAsync(dto.BookId, ct) && !dto.IsAvailable) throw new InvalidOperationException("Cannot mark a book as unavailable while it is on loan.");
